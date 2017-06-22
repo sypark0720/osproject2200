@@ -101,17 +101,8 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
     
-    /* temporary */
-    int64_t wakeup_tick;
-	//
   };
 
-//temporary
-void thread_sleep(int64_t ticks);
-void thread_awake(int64_t ticks);
-int64_t get_next_tick_to_awake(void);
-void update_next_tick_to_awake(int64_t ticks);
-//
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
@@ -141,7 +132,9 @@ void thread_yield (void);
 typedef void thread_action_func (struct thread *t, void *aux);
 void thread_foreach (thread_action_func *, void *);
 
+//project1
 bool thread_compare_priority (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
+void test_max_priority(void);
 
 int thread_get_priority (void);
 void thread_set_priority (int);

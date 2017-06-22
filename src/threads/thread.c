@@ -20,10 +20,6 @@
    of thread.h for details. */
 #define THREAD_MAGIC 0xcd6abf4b
 
-//temporary
-static struct list sleep_list; 
-static int64_t next_tick_to_awake;
-//
 
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
@@ -97,9 +93,6 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
-//temporary
-  list_init(&sleep_list);
-//	
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -107,51 +100,6 @@ thread_init (void)
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 }
-
-//temporary
-void update_next_tick_to_awake(int64_t ticks){
-next_tick_to_awake = (next_tick_to_awake > ticks) ? ticks : next_tick_to_awake;
-}
-
-int64_t get_next_tick_to_awake(void){
-return next_tick_to_awake;
-}
-
-void thread_sleep(int64_t ticks){
-struct thread *cur;
-
-enum intr_level old_level;
-old_level = intr_disable();
-
-cur = thread_current(); 
-ASSERT(cur != idle_thread);
-update_next_tick_to_awake(cur-> wakeup_tick = ticks);
-
-list_push_back(&sleep_list, &cur->elem);
-
-thread_block();
-
-intr_set_level(old_level);
-}
-
-void thread_awake(int64_t wakeup_tick){
-next_tick_to_awake = INT64_MAX;
-struct list_elem *e;
-e = list_begin(&sleep_list);
-while(e != list_end(&sleep_list)){
-struct thread * t = list_entry(e, struct thread, elem);
-
-if(wakeup_tick >= t->wakeup_tick){
-e = list_remove(&t->elem);
-thread_unblock(t);
-}else{
-e = list_next(e);
-update_next_tick_to_awake(t->wakeup_tick);
-}
-}
-}
-
-//
 
 /* Starts preemptive thread scheduling by enabling interrupts.
    Also creates the idle thread. */
@@ -301,6 +249,11 @@ thread_unblock (struct thread *t)
   list_insert_ordered (&ready_list, &t->elem, thread_compare_priority, 0); 
   //list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
+
+  //project1
+  if(thread_current()!=idle_thread  && thread_current()->priority < t->priority )
+    thread_yield();
+
   intr_set_level (old_level);
 }
 
@@ -394,7 +347,7 @@ thread_foreach (thread_action_func *func, void *aux)
     }
 }
 
-//change
+//project1
 /* function to compare priority as parameter for list_insert_ordered */
 bool 
 thread_compare_priority (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED){
@@ -410,12 +363,13 @@ test_max_priority (void){
 		}
 }
 
-
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
+//project1
+test_max_priority();
 }
 
 /* Returns the current thread's priority. */
